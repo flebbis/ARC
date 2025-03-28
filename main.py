@@ -5,6 +5,8 @@ import win32api
 import win32con
 import tkinter as tk
 from tkinter import filedialog, ttk
+import tkinter.font as tkFont
+
 
 SETTINGS_FILE = "program_settings.json"
 
@@ -42,6 +44,25 @@ class ScreenRes:
         """Hämtar aktuell upplösning."""
         user32 = win32api.GetSystemMetrics
         return user32(0), user32(1)
+
+    @staticmethod
+    def get_sub_resolutions():
+        """Genererar relevanta subupplösningar baserat på huvudskärmens upplösning."""
+        width, height = ScreenRes.get()
+        resolutions = [
+            (width, height),
+            (width // 2, height // 2),
+            (width // 2, height),
+            (width, height // 2),
+            (width // 4 * 3, height // 4 * 3),
+            (width // 4, height // 4),
+            (1920, 1440),  # Added resolution
+            (1600, 1200),  # Added resolution
+            (1280, 1024),  # Added resolution
+            (1024, 768)    # Added resolution
+        ]
+        # Filter out too small resolutions and sort by width in descending order
+        return [f"{w} x {h}" for w, h in sorted(resolutions, reverse=True) if w >= 800 and h >= 600]
 
 
 def load_settings():
@@ -107,19 +128,64 @@ def monitor_processes():
         time.sleep(2)
 
 
+
+
+
 def add_program_gui():
-    """GUI för att lägga till ett nytt program."""
+    """GUI for adding a new program."""
 
     def browse_program():
         filename = filedialog.askopenfilename(filetypes=[("Executable Files", "*.exe")])
         if filename:
             program_var.set(filename.split("/")[-1])
+            root.destroy()
+            resolution_selection_gui(program_var.get())
+
+    root = tk.Tk()
+    root.title("Add a program")
+    root.configure(bg="#1d1b20")
+
+    # Center the window on the screen
+    window_width = 800
+    window_height = 600
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    position_top = int(screen_height / 2 - window_height / 2)
+    position_right = int(screen_width / 2 - window_width / 2)
+    root.geometry(f"{window_width}x{window_height}+{position_right}+{position_top}")
+
+    root.lift()  # Bring the window to the front
+    root.focus_force()  # Focus on the window
+    root.attributes("-topmost", True)  # Ensure the window is on top
+
+    program_var = tk.StringVar()
+
+    # Load JetBrains Mono font
+    font_path = "JetBrainsMono-Regular.ttf"
+    jetbrains_mono = tkFont.Font(family="JetBrains Mono", size=16, name="JetBrainsMono")
+    root.option_add("*Font", jetbrains_mono)
+
+    style = ttk.Style()
+    style.configure("TButton", font=jetbrains_mono, padding=10, relief="flat", background="#1d1b20", foreground="#1d1b20")
+    style.map("TButton", background=[("active", "#3e3b40")])
+    style.configure("Rounded.TButton", borderwidth=1, relief="solid", bordercolor="#3e3b40", focusthickness=3, focuscolor="none", padding=10, background="#1d1b20", foreground="#1d1b20")
+    style.layout("Rounded.TButton", [
+        ("Button.border", {"children": [("Button.padding", {"children": [("Button.label", {"sticky": "nswe"})], "sticky": "nswe"})], "sticky": "nswe"})])
+    style.configure("Rounded.TButton", borderwidth=1, relief="solid", bordercolor="#3e3b40", focusthickness=3, focuscolor="none", padding=10, background="#1d1b20", foreground="#1d1b20")
+
+    tk.Label(root, text="Add a program", fg="#FAFAFA", bg="#1d1b20", font=jetbrains_mono).pack(pady=20, expand=True)
+    ttk.Button(root, text="Browse", command=browse_program, style="Rounded.TButton").pack(pady=10, expand=True)
+
+    root.mainloop()
+
+
+def resolution_selection_gui(program):
+    """GUI for selecting resolution for the program."""
 
     def save_program():
-        program = program_var.get().strip()
         resolution = resolution_var.get()
 
-        if not program or not resolution:
+        if not resolution:
             return
 
         width, height = map(int, resolution.split(" x "))
@@ -129,21 +195,45 @@ def add_program_gui():
         root.destroy()
 
     root = tk.Tk()
-    root.title("Lägg till program")
-    root.geometry("300x200+50+600")  # Position i nedre vänstra hörnet
-    root.configure(bg="#222")
+    root.title("Select Resolution")
+    root.configure(bg="#1d1b20")
 
-    program_var = tk.StringVar()
+    # Center the window on the screen
+    window_width = 800
+    window_height = 600
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    position_top = int(screen_height / 2 - window_height / 2)
+    position_right = int(screen_width / 2 - window_width / 2)
+    root.geometry(f"{window_width}x{window_height}+{position_right}+{position_top}")
+
+    root.lift()  # Bring the window to the front
+    root.focus_force()  # Focus on the window
+    root.attributes("-topmost", True)  # Ensure the window is on top
+
     resolution_var = tk.StringVar()
 
-    tk.Label(root, text="Add a program", fg="white", bg="#222", font=("Courier", 12)).pack(pady=10)
-    tk.Button(root, text="Browse", command=browse_program).pack()
+    # Load JetBrains Mono font
+    font_path = "JetBrainsMono-Regular.ttf"
+    jetbrains_mono = tkFont.Font(family="JetBrains Mono", size=16, name="JetBrainsMono")
+    root.option_add("*Font", jetbrains_mono)
 
-    tk.Label(root, text="Target Resolution", fg="white", bg="#222", font=("Courier", 12)).pack(pady=10)
-    resolutions = ["2560 x 1440", "1920 x 1080", "1280 x 720"]  # Exempelupplösningar
-    ttk.Combobox(root, textvariable=resolution_var, values=resolutions).pack()
+    style = ttk.Style()
+    style.configure("TButton", font=jetbrains_mono, padding=10, relief="flat", background="#1d1b20", foreground="#1d1b20")
+    style.map("TButton", background=[("active", "#3e3b40")])
+    style.configure("Rounded.TButton", borderwidth=1, relief="solid", bordercolor="#3e3b40", focusthickness=3, focuscolor="none", padding=10, background="#1d1b20", foreground="#1d1b20")
+    style.layout("Rounded.TButton", [
+        ("Button.border", {"children": [("Button.padding", {"children": [("Button.label", {"sticky": "nswe"})], "sticky": "nswe"})], "sticky": "nswe"})])
+    style.configure("Rounded.TButton", borderwidth=1, relief="solid", bordercolor="#3e3b40", focusthickness=3, focuscolor="none", padding=10, background="#1d1b20", foreground="#1d1b20")
 
-    tk.Button(root, text="Save", command=save_program).pack(pady=10)
+    tk.Label(root, text="Select Resolution", fg="#FAFAFA", bg="#1d1b20", font=jetbrains_mono).pack(pady=20, expand=True)
+    tk.Label(root, text=f"Program: {program}", fg="#FAFAFA", bg="#1d1b20", font=jetbrains_mono).pack(pady=10, expand=True)
+
+    tk.Label(root, text="Target Resolution", fg="#FAFAFA", bg="#1d1b20", font=jetbrains_mono).pack(pady=20, expand=True)
+    resolutions = ScreenRes.get_sub_resolutions()  # Get relevant sub-resolutions
+    ttk.Combobox(root, textvariable=resolution_var, values=resolutions, font=jetbrains_mono).pack(pady=10, expand=True)
+
+    ttk.Button(root, text="Save", command=save_program, style="Rounded.TButton").pack(pady=20, expand=True)
     root.mainloop()
 
 
@@ -156,3 +246,4 @@ if __name__ == "__main__":
             monitor_processes()
         else:
             print("Ogiltigt val, försök igen.")
+
